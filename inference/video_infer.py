@@ -7,8 +7,8 @@ from transformers import ViTForImageClassification, AutoImageProcessor
 
 VIDEO_MODEL_PATH = "models/video_model"
 
-video_model = ViTForImageClassification.from_pretrained(VIDEO_MODEL_PATH)
-video_extractor = AutoImageProcessor.from_pretrained(VIDEO_MODEL_PATH)
+video_model = ViTForImageClassification.from_pretrained(VIDEO_MODEL_PATH, local_files_only=True)
+video_extractor = AutoImageProcessor.from_pretrained(VIDEO_MODEL_PATH, local_files_only=True)
 video_model.eval()
 
 

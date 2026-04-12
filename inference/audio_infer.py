@@ -9,8 +9,8 @@ from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
 
 AUDIO_MODEL_PATH = "models/audio_model"
 
-audio_model = AutoModelForAudioClassification.from_pretrained(AUDIO_MODEL_PATH)
-audio_extractor = AutoFeatureExtractor.from_pretrained(AUDIO_MODEL_PATH)
+audio_model = AutoModelForAudioClassification.from_pretrained(AUDIO_MODEL_PATH, local_files_only=True)
+audio_extractor = AutoFeatureExtractor.from_pretrained(AUDIO_MODEL_PATH, local_files_only=True)
 audio_model.eval()
 
 
