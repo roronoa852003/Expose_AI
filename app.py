@@ -1,14 +1,12 @@
-import os
+import io
 import shutil
 import tempfile
 from typing import Optional
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from huggingface_hub import snapshot_download
 
 from inference.video_infer import video_fake_probability, image_fake_probability
 from inference.audio_infer import audio_fake_probability
@@ -17,26 +15,6 @@ from utils.audio_explain import plot_spectrogram
 from inference.audio_infer import extract_audio
 from fusion.fusion import fuse
 from llm.llm_auditor import audit_decision
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # --- HUB SYNC: Download models at startup if not present locally ---
-    repo_id = os.getenv("HF_MODEL_REPO")
-    if repo_id:
-        print(f"[HUB SYNC] Updating models from {repo_id}...")
-        try:
-            snapshot_download(
-                repo_id=repo_id,
-                local_dir="models",
-                local_dir_use_symlinks=False
-            )
-            print("[HUB SYNC] Models updated successfully.")
-        except Exception as e:
-            print(f"[HUB SYNC] Warning: Failed to sync models from hub: {e}")
-    else:
-        print("[HUB SYNC] No HF_MODEL_REPO env var found. Using local models/ folder.")
-    
-    yield
 
 
 
@@ -59,7 +37,7 @@ class AnalysisResponse(BaseModel):
     llm_audit: Optional[LlmAuditResult] = None
 
 
-app = FastAPI(title="Multimodal Deepfake Detector API", lifespan=lifespan)
+app = FastAPI(title="Multimodal Deepfake Detector API")
 
 app.add_middleware(
     CORSMiddleware,

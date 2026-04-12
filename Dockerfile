@@ -23,5 +23,5 @@ COPY . .
 # Expose port 7860 (required for Hugging Face Spaces)
 EXPOSE 7860
 
-# Run with Gunicorn and Uvicorn workers for production on port 7860
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app:app", "--bind", "0.0.0.0:7860"]
+# Run sync_models.py first, then start Gunicorn
+CMD ["sh", "-c", "python sync_models.py && gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:7860"]
