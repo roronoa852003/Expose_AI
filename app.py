@@ -88,50 +88,60 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
     audio_prob = None
     meta_prob = None
 
-    if is_image:
-        video_prob = image_fake_probability(file_path)
-        meta_prob = metadata_fake_probability(file_path, media_type="image")
-    elif is_audio:
-        audio_prob = audio_fake_probability(file_path)
-        meta_prob = metadata_fake_probability(file_path, media_type="audio")
-    else:
-        video_prob = video_fake_probability(file_path)
-        audio_prob = audio_fake_probability(file_path)
-        meta_prob = metadata_fake_probability(file_path, media_type="video")
-
-    final_score, label, dtype, reason_text = fuse(video_prob, audio_prob, meta_prob)
-
-    override_triggered = dtype in {
-        "AUDIO_DEEPFAKE",
-        "VIDEO_DEEPFAKE",
-        "METADATA_DEEPFAKE",
-    }
-
-    llm_result: Optional[LlmAuditResult] = None
     try:
-        raw = audit_decision(
-            video_prob,
-            audio_prob,
-            meta_prob,
-            label,
-            dtype,
-            override_triggered,
-        )
-        llm_result = LlmAuditResult(**raw)
-    except Exception:
-        llm_result = None
+        if is_image:
+            video_prob = image_fake_probability(file_path)
+            meta_prob = metadata_fake_probability(file_path, media_type="image")
+        elif is_audio:
+            audio_prob = audio_fake_probability(file_path)
+            meta_prob = metadata_fake_probability(file_path, media_type="audio")
+        else:
+            video_prob = video_fake_probability(file_path)
+            audio_prob = audio_fake_probability(file_path)
+            meta_prob = metadata_fake_probability(file_path, media_type="video")
 
-    return AnalysisResponse(
-        video_prob=video_prob,
-        audio_prob=audio_prob,
-        meta_prob=meta_prob,
-        final_score=final_score,
-        label=label,
-        detected_type=dtype,
-        reason=reason_text,
-        override_triggered=override_triggered,
-        llm_audit=llm_result,
-    )
+        final_score, label, dtype, reason_text = fuse(video_prob, audio_prob, meta_prob)
+
+        override_triggered = dtype in {
+            "AUDIO_DEEPFAKE",
+            "VIDEO_DEEPFAKE",
+            "METADATA_DEEPFAKE",
+        }
+
+        llm_result: Optional[LlmAuditResult] = None
+        try:
+            raw = audit_decision(
+                video_prob,
+                audio_prob,
+                meta_prob,
+                label,
+                dtype,
+                override_triggered,
+            )
+            llm_result = LlmAuditResult(**raw)
+        except Exception:
+            llm_result = None
+
+        return AnalysisResponse(
+            video_prob=video_prob,
+            audio_prob=audio_prob,
+            meta_prob=meta_prob,
+            final_score=final_score,
+            label=label,
+            detected_type=dtype,
+            reason=reason_text,
+            override_triggered=override_triggered,
+            llm_audit=llm_result,
+        )
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"CRITICAL ERROR DURING ANALYSIS:\n{error_details}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}\n\nTraceback:\n{error_details}")
+    finally:
+        # Cleanup temp file
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @app.post("/api/spectrogram")
