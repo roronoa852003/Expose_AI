@@ -1,10 +1,7 @@
-# Ignore everything except the frontend folder
-*
-!frontend/
-
-# Also ignore heavy Python files/folders even if not matched by *
+# Ignore the heavy Python backend to prevent 5GB storage limit errors
 app.py
 requirements.txt
+Dockerfile
 models/
 inference/
 fusion/
@@ -16,3 +13,8 @@ __pycache__/
 *.jpg
 *.png
 *.json
+exposeai*.png
+
+# Ensure frontend is NOT ignored
+!frontend/
+!frontend/**/*
