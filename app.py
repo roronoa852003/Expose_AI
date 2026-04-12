@@ -48,6 +48,15 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def root() -> dict:
+    return {
+        "message": "Welcome to the Multimodal Deepfake Detector API",
+        "health_check": "/health",
+        "documentation": "/docs"
+    }
+
+
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
