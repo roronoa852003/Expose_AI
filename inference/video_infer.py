@@ -25,17 +25,22 @@ video_extractor = AutoImageProcessor.from_pretrained(
 video_model.eval()
 
 
-def video_fake_probability(video_path, frame_interval=90):
+def video_fake_probability(video_path, frame_interval=30):
     cap = cv2.VideoCapture(video_path)
     frame_probs = []
     frame_id = 0
+
+    if not cap.isOpened():
+        print(f"Error: Could not open video {video_path}")
+        return 0.0
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        if frame_id % frame_interval == 0:
+        # Process the first frame and then every N frames
+        if frame_id == 0 or frame_id % frame_interval == 0:
             # Resize frame to ViT input size immediately to save memory
             frame_resized = cv2.resize(frame, (224, 224))
             image = Image.fromarray(cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB))
@@ -44,9 +49,9 @@ def video_fake_probability(video_path, frame_interval=90):
             with torch.no_grad():
                 outputs = video_model(**inputs)
                 probs = torch.softmax(outputs.logits, dim=1)
-                frame_probs.append(probs[0][1].item())  # FAKE prob
+                # Frame index 1 is FAKE based on most ViT deepfake models
+                frame_probs.append(probs[0][1].item()) 
                 
-            # Cleanup
             del inputs, outputs, image, frame_resized
 
         frame_id += 1
