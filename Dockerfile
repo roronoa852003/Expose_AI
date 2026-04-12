@@ -20,6 +20,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Force transformers to use local files only - prevents hub validation errors
+ENV TRANSFORMERS_OFFLINE=1
+ENV HF_DATASETS_OFFLINE=1
+
 # Expose port 7860 (required for Hugging Face Spaces)
 EXPOSE 7860
 

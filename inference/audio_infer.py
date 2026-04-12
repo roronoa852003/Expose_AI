@@ -5,10 +5,9 @@ import numpy as np
 import os
 import shutil
 import tempfile
-from pathlib import Path
 from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
 
-AUDIO_MODEL_PATH = Path("/app/models/audio_model")
+AUDIO_MODEL_PATH = "/app/models/audio_model"
 
 audio_model = AutoModelForAudioClassification.from_pretrained(AUDIO_MODEL_PATH)
 audio_extractor = AutoFeatureExtractor.from_pretrained(AUDIO_MODEL_PATH)
