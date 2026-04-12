@@ -1,0 +1,18 @@
+# Ignore everything except the frontend folder
+*
+!frontend/
+
+# Also ignore heavy Python files/folders even if not matched by *
+app.py
+requirements.txt
+models/
+inference/
+fusion/
+llm/
+utils/
+sync_models.py
+__pycache__/
+*.mp4
+*.jpg
+*.png
+*.json
