@@ -1,16 +1,29 @@
+import os
 import torch
 import librosa
 import subprocess
 import numpy as np
-import os
 import shutil
 import tempfile
 from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
 
-AUDIO_MODEL_PATH = "/app/models/audio_model"
+# Use Hub repo ID + cache_dir — transformers finds the pre-synced files in cache
+_REPO_ID = os.environ.get("HF_MODEL_REPO", "vedanthundare/expose_ai")
+_HF_TOKEN = os.environ.get("HF_TOKEN")
+_CACHE_DIR = os.environ.get("HF_HOME", "/app/hf_cache")
 
-audio_model = AutoModelForAudioClassification.from_pretrained(AUDIO_MODEL_PATH)
-audio_extractor = AutoFeatureExtractor.from_pretrained(AUDIO_MODEL_PATH)
+audio_model = AutoModelForAudioClassification.from_pretrained(
+    _REPO_ID,
+    subfolder="audio_model",
+    token=_HF_TOKEN,
+    cache_dir=_CACHE_DIR
+)
+audio_extractor = AutoFeatureExtractor.from_pretrained(
+    _REPO_ID,
+    subfolder="audio_model",
+    token=_HF_TOKEN,
+    cache_dir=_CACHE_DIR
+)
 audio_model.eval()
 
 

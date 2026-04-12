@@ -1,14 +1,27 @@
+import os
 import cv2
 import torch
 import numpy as np
 from PIL import Image
 from transformers import ViTForImageClassification, AutoImageProcessor
 
+# Use Hub repo ID + cache_dir — transformers finds the pre-synced files in cache
+_REPO_ID = os.environ.get("HF_MODEL_REPO", "vedanthundare/expose_ai")
+_HF_TOKEN = os.environ.get("HF_TOKEN")
+_CACHE_DIR = os.environ.get("HF_HOME", "/app/hf_cache")
 
-VIDEO_MODEL_PATH = "/app/models/video_model"
-
-video_model = ViTForImageClassification.from_pretrained(VIDEO_MODEL_PATH)
-video_extractor = AutoImageProcessor.from_pretrained(VIDEO_MODEL_PATH)
+video_model = ViTForImageClassification.from_pretrained(
+    _REPO_ID,
+    subfolder="video_model",
+    token=_HF_TOKEN,
+    cache_dir=_CACHE_DIR
+)
+video_extractor = AutoImageProcessor.from_pretrained(
+    _REPO_ID,
+    subfolder="video_model",
+    token=_HF_TOKEN,
+    cache_dir=_CACHE_DIR
+)
 video_model.eval()
 
 
