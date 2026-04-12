@@ -14,13 +14,13 @@ _CACHE_DIR = os.environ.get("HF_HOME", "/app/hf_cache")
 
 audio_model = AutoModelForAudioClassification.from_pretrained(
     _REPO_ID,
-    subfolder="audio_model",
+    subfolder="models/audio_model",
     token=_HF_TOKEN,
     cache_dir=_CACHE_DIR
 )
 audio_extractor = AutoFeatureExtractor.from_pretrained(
     _REPO_ID,
-    subfolder="audio_model",
+    subfolder="models/audio_model",
     token=_HF_TOKEN,
     cache_dir=_CACHE_DIR
 )

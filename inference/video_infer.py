@@ -12,13 +12,13 @@ _CACHE_DIR = os.environ.get("HF_HOME", "/app/hf_cache")
 
 video_model = ViTForImageClassification.from_pretrained(
     _REPO_ID,
-    subfolder="video_model",
+    subfolder="models/video_model",
     token=_HF_TOKEN,
     cache_dir=_CACHE_DIR
 )
 video_extractor = AutoImageProcessor.from_pretrained(
     _REPO_ID,
-    subfolder="video_model",
+    subfolder="models/video_model",
     token=_HF_TOKEN,
     cache_dir=_CACHE_DIR
 )
