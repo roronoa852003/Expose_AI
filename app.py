@@ -76,9 +76,31 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
         raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a supported media file.")
 
     content_type = file.content_type or "application/octet-stream"
+    filename = (file.filename or "").lower()
+    image_exts = (".jpg", ".jpeg", ".png", ".webp", ".bmp")
+    audio_exts = (".wav", ".mp3", ".m4a", ".ogg", ".flac", ".aac")
+    video_exts = (".mp4", ".mov", ".avi", ".webm", ".mkv", ".mpeg", ".mpg")
+
     is_audio = content_type.startswith("audio/")
     is_image = content_type.startswith("image/")
-    is_video = content_type.startswith("video/") or not (is_audio or is_image)
+    is_video = content_type.startswith("video/")
+
+    if content_type == "application/octet-stream":
+        if filename.endswith(image_exts):
+            is_image = True
+            is_audio = False
+            is_video = False
+        elif filename.endswith(audio_exts):
+            is_audio = True
+            is_image = False
+            is_video = False
+        elif filename.endswith(video_exts):
+            is_video = True
+            is_audio = False
+            is_image = False
+        else:
+            # Keep video as safest fallback for unknown binary uploads.
+            is_video = True
 
     ext = ".mp4" if is_video else (".wav" if is_audio else ".jpg")
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -90,10 +112,13 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
     meta_prob = None
 
     try:
+        source_type = "video"
         if is_image:
+            source_type = "image"
             video_prob = image_fake_probability(file_path)
             meta_prob = metadata_fake_probability(file_path, media_type="image")
         elif is_audio:
+            source_type = "audio"
             audio_prob = audio_fake_probability(file_path)
             meta_prob = metadata_fake_probability(file_path, media_type="audio")
         else:
@@ -101,7 +126,9 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
             audio_prob = audio_fake_probability(file_path)
             meta_prob = metadata_fake_probability(file_path, media_type="video")
 
-        final_score, label, dtype, reason_text = fuse(video_prob, audio_prob, meta_prob)
+        final_score, label, dtype, reason_text = fuse(
+            video_prob, audio_prob, meta_prob, source_type=source_type
+        )
 
         override_triggered = dtype in {
             "AUDIO_DEEPFAKE",

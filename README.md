@@ -19,3 +19,10 @@ This is the backend for the Expose AI project, hosted as a Docker Space on Huggi
 
 ## Environment Variables Required
 - `HF_MODEL_REPO`: The Hugging Face Repository ID where model weights are stored.
+
+## Image-Only Evaluation Loop
+- Create a CSV file with headers: `path,label`
+- Label values can be `0/1` or `real/fake`
+- Run threshold sweep:
+  - `python scripts/evaluate_image_only.py --csv your_image_eval.csv --start-threshold 0.50 --end-threshold 0.85 --step 0.02`
+- The script writes `image_eval_results.json` with confusion metrics at each threshold and the best threshold by F1.
