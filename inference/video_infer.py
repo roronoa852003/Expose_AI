@@ -41,6 +41,7 @@ print(f"[video_infer] id2label={_id2label}  ->  using FAKE index={_FAKE_IDX}")
 _FACE_CASCADE = cv2.CascadeClassifier(
     os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
 )
+_MAX_FRAME_SIDE = 960  # downscale HD/4K frames for faster inference
 
 # ---------------------------------------------------------------------------
 # Sharpness gate -- MUST be measured on face crop, NOT the full frame
@@ -490,7 +491,8 @@ def _multi_view_fake_probability(image, n_crops=7):
     except Exception:
         pass
 
-    return float(np.mean([_predict_fake_probability(v) for v in views]))
+    n_crops = max(1, min(int(n_crops), len(views)))
+    return float(np.mean([_predict_fake_probability(v) for v in views[:n_crops]]))
 
 
 # ---------------------------------------------------------------------------
@@ -536,7 +538,8 @@ def _score_frame(rgb, pil_image, full_gray):
     (frame_score: float, face_pixel_vec: np.ndarray or None)
     """
     faces      = _extract_faces(rgb, max_faces=2)
-    vit_global = _multi_view_fake_probability(pil_image)
+    # Video uses fewer test-time views for speed; temporal aggregation adds stability.
+    vit_global = _multi_view_fake_probability(pil_image, n_crops=3)
 
     if not faces:
         return float(np.clip(vit_global * 0.70, 0.0, 1.0)), None
@@ -552,7 +555,7 @@ def _score_frame(rgb, pil_image, full_gray):
             continue
 
         face_pil = _crop_face_padded(rgb, x, y, fw, fh)
-        vit_face = _multi_view_fake_probability(face_pil)
+        vit_face = _multi_view_fake_probability(face_pil, n_crops=3)
 
         edge_s = _edge_ratio_score(face_gray)
         hue_s  = _hue_inconsistency_score(face_bgr)
@@ -714,6 +717,13 @@ def video_fake_probability(video_path, frame_interval=5):
         print(f"[video_infer] ERROR: Could not open video {video_path}")
         return 0.0
 
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    target_samples = 18
+    adaptive_interval = max(
+        int(frame_interval),
+        int(total_frames / target_samples) if total_frames > 0 else int(frame_interval),
+    )
+
     frame_probs   = []
     face_diff_seq = []
     prev_face_vec = None
@@ -724,7 +734,15 @@ def video_fake_probability(video_path, frame_interval=5):
         if not ret:
             break
 
-        if frame_id == 0 or frame_id % frame_interval == 0:
+        if frame_id == 0 or frame_id % adaptive_interval == 0:
+            h, w = frame.shape[:2]
+            long_side = max(h, w)
+            if long_side > _MAX_FRAME_SIDE:
+                scale = _MAX_FRAME_SIDE / float(long_side)
+                new_w = max(1, int(w * scale))
+                new_h = max(1, int(h * scale))
+                frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
             rgb     = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             gray    = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             pil_img = Image.fromarray(rgb)
@@ -771,6 +789,7 @@ def video_fake_probability(video_path, frame_interval=5):
         f"(spatial={spatial_score:.4f}, temporal={temporal_score:.4f}, "
         f"high_risk_mean={high_risk_mean:.4f}, global_mean={global_mean:.4f}, "
         f"p85={p85:.4f}, frames={len(frame_probs)}, "
+        f"sample_interval={adaptive_interval}, "
         f"temporal_diffs={n_diffs}, FAKE_IDX={_FAKE_IDX})"
     )
     return result

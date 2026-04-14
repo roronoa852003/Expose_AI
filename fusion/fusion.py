@@ -33,17 +33,18 @@ def fuse(video_prob, audio_prob, meta_prob, source_type=None):
     AUDIO_META_SUS_TH    = 0.38
     META_AUDIO_SUS_TH    = 0.55
 
-    # --- Video WITH audio ---
-    VIDEO_STRONG_TH      = 0.50
+    # --- Visual hard rule requested ---
+    # If visual anomaly probability is >= 40%, mark as fake.
+    VIDEO_STRONG_TH      = 0.40
 
     # --- Video WITHOUT audio ---
-    VIDEO_NO_AUDIO_TH    = 0.60
-    VIDEO_NO_AUDIO_LOW_TH= 0.45
+    VIDEO_NO_AUDIO_TH    = 0.40
+    VIDEO_NO_AUDIO_LOW_TH= 0.35
 
     VIDEO_SUS_TH         = 0.62   # subtle video + metadata
 
     # --- Image ---
-    IMAGE_STRONG_TH      = 0.50
+    IMAGE_STRONG_TH      = 0.40
     IMAGE_META_SUS_TH    = 0.45
     IMAGE_META_ONLY_TH   = 0.75
 

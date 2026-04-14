@@ -2,6 +2,7 @@ import io
 import os
 import shutil
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -122,8 +123,12 @@ async def analyze_video(file: UploadFile = File(...)) -> AnalysisResponse:
             audio_prob = audio_fake_probability(file_path)
             meta_prob = metadata_fake_probability(file_path, media_type="audio")
         else:
-            video_prob = video_fake_probability(file_path)
-            audio_prob = audio_fake_probability(file_path)
+            # Run heavy video/audio inference concurrently for faster HD processing.
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                fut_video = pool.submit(video_fake_probability, file_path)
+                fut_audio = pool.submit(audio_fake_probability, file_path)
+                video_prob = fut_video.result()
+                audio_prob = fut_audio.result()
             meta_prob = metadata_fake_probability(file_path, media_type="video")
 
         final_score, label, dtype, reason_text = fuse(
